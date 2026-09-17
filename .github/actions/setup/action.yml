@@ -1,0 +1,41 @@
+name: Setup
+description: pnpm + Node + store cache + @antfu/ni, then install
+
+inputs:
+  node-version:
+    description: Node version passed to actions/setup-node
+    required: false
+    default: lts/*
+
+runs:
+  using: composite
+  steps:
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+
+    - name: Set node
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    # The store path depends on the pnpm version action-setup just resolved,
+    # so it has to be read after that step rather than hardcoded.
+    - name: Get pnpm store directory
+      shell: bash
+      run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+    - name: Setup pnpm cache
+      uses: actions/cache@v5
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - name: Setup ni
+      shell: bash
+      run: npm i -g @antfu/ni
+
+    - name: Install
+      shell: bash
+      run: nci

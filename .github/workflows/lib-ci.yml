@@ -1,0 +1,82 @@
+# Reusable CI for a pnpm library monorepo: lint + format, typecheck, and a
+# cross-OS test matrix. Callers supply nothing in the common case.
+#
+#   jobs:
+#     ci:
+#       uses: Debbl/workflows/.github/workflows/lib-ci.yml@main
+
+name: Lib CI
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node version for every job
+        type: string
+        required: false
+        default: lts/*
+      test-os:
+        description: JSON array of runners the test job fans out over
+        type: string
+        required: false
+        default: '["ubuntu-latest", "windows-latest", "macos-latest"]'
+      format-check:
+        description: Run `nr format:check` alongside the linter
+        type: boolean
+        required: false
+        default: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: Debbl/workflows/.github/actions/setup@main
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Lint
+        run: nr lint
+
+      - name: Format
+        if: ${{ inputs.format-check }}
+        run: nr format:check
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: Debbl/workflows/.github/actions/setup@main
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      # Playgrounds and the website resolve the package's `dist`, so the build
+      # has to come first or every workspace consumer fails to typecheck.
+      - name: Build
+        run: nr build
+
+      - name: Typecheck
+        run: nr typecheck
+
+  test:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: ${{ fromJSON(inputs.test-os) }}
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: Debbl/workflows/.github/actions/setup@main
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Build
+        run: nr build
+
+      - name: Test
+        run: nr test

@@ -1,0 +1,50 @@
+# Reusable release for a pnpm library monorepo: build, publish every public
+# workspace package to npm, then cut a GitHub release from the commit log.
+#
+#   permissions:
+#     id-token: write   # npm trusted publishing (OIDC)
+#     contents: write   # changelogithub creates the release
+#
+#   jobs:
+#     release:
+#       uses: Debbl/workflows/.github/workflows/lib-release.yml@main
+
+name: Lib Release
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node version for the release job
+        type: string
+        required: false
+        default: lts/*
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # changelogithub walks back to the previous tag, so a shallow
+          # checkout would give it nothing to diff against.
+          fetch-depth: 0
+
+      - uses: Debbl/workflows/.github/actions/setup@main
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Build
+        run: nr build
+
+      - name: Publish to npm
+        run: pnpm -r publish --access public --no-git-checks
+
+      - name: GitHub release
+        run: npx changelogithub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
