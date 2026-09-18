@@ -78,6 +78,14 @@ jobs:
 | -------------- | ------- | - |
 | `node-version` | `lts/*` | passed to `actions/setup-node` |
 
+## This repo has to stay public
+
+A reusable workflow is only callable from another repository when the repo
+holding it is public, or private *and in the same account* with Actions access
+granted. `best-i18n/best-i18n` lives under a different owner than `Debbl`, so
+public is the only arrangement that works for all the callers. Making this repo
+private breaks their CI.
+
 ## Pinning
 
 `@main` follows this repo. To pin, tag it and use the tag - callers resolve the
