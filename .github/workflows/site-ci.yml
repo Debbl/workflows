@@ -1,0 +1,55 @@
+# Reusable CI for a statically exported site: lint + format, then typecheck
+# and build. No test job and no OS matrix - a static export is the same on
+# every platform, and a docs site has nothing to unit test.
+#
+#   jobs:
+#     ci:
+#       uses: Debbl/workflows/.github/workflows/site-ci.yml@main
+
+name: Site CI
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node version for every job
+        type: string
+        required: false
+        default: lts/*
+      format-check:
+        description: Run `nr format:check` alongside the linter
+        type: boolean
+        required: false
+        default: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: Debbl/workflows/.github/actions/setup@main
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Lint
+        run: nr lint
+
+      - name: Format
+        if: ${{ inputs.format-check }}
+        run: nr format:check
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: Debbl/workflows/.github/actions/setup@main
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Typecheck
+        run: nr typecheck
+
+      - name: Build
+        run: nr build

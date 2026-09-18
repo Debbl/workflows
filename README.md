@@ -7,9 +7,10 @@ Before this repo the same 40 lines of pnpm setup were copied into four jobs per
 repo; changing the cache key meant editing eight places.
 
 ```text
-.github/actions/setup           pnpm + Node + store cache + ni + install
-.github/workflows/lib-ci.yml    lint & format, typecheck, test matrix
+.github/actions/setup              pnpm + Node + store cache + ni + install
+.github/workflows/lib-ci.yml       lint & format, typecheck, test matrix
 .github/workflows/lib-release.yml  build, pnpm publish, changelogithub
+.github/workflows/site-ci.yml      lint & format, typecheck, build
 ```
 
 ## Using them
@@ -77,6 +78,17 @@ jobs:
 | input          | default | |
 | -------------- | ------- | - |
 | `node-version` | `lts/*` | passed to `actions/setup-node` |
+
+### `site-ci.yml`
+
+For a statically exported site rather than a package - no test job, no OS
+matrix. A static export is the same everywhere, and a docs site has nothing to
+unit test. Needs `lint`, `format:check`, `typecheck` and `build`.
+
+| input          | default | |
+| -------------- | ------- | - |
+| `node-version` | `lts/*` | passed to `actions/setup-node` |
+| `format-check` | `true`  | run `nr format:check` after the linter |
 
 ## This repo has to stay public
 
